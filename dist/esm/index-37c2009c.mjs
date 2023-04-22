@@ -1,7 +1,5 @@
-'use strict';
-
-var _commonjsHelpers = require('./_commonjsHelpers-68cdf74f.js');
-var vue = require('vue');
+import { c as commonjsGlobal } from './_commonjsHelpers-770ed51d.mjs';
+import { reactive } from 'vue';
 
 /*!
  * currency.js - v2.0.4
@@ -238,7 +236,7 @@ var moment$1 = {exports: {}};
 (function (module, exports) {
 	(function (global, factory) {
 	  module.exports = factory() ;
-	})(_commonjsHelpers.commonjsGlobal, function () {
+	})(commonjsGlobal, function () {
 
 	  var hookCallback;
 	  function hooks() {
@@ -4774,7 +4772,7 @@ class Common {
         }
         return result;
     };
-    loaderSetup = vue.reactive({
+    loaderSetup = reactive({
         show: false,
         useModal: false,
         hasError: false,
@@ -4820,7 +4818,7 @@ class Common {
         };
         this.loaderSetup = Loader;
     };
-    globalParameters = vue.reactive({
+    globalParameters = reactive({
         currency: 'ngn',
     });
     momentInstance = moment;
@@ -5075,4 +5073,4 @@ const Logic = {
     Form: new Form(),
 };
 
-exports.Logic = Logic;
+export { Logic as L };
