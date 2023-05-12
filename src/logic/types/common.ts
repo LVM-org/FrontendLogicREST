@@ -1,3 +1,47 @@
+export enum QueryKeys {
+  and = 'and',
+  or = 'or',
+}
+
+export enum Conditions {
+  lt = 'lt',
+  lte = 'lte',
+  gt = 'gt',
+  gte = 'gte',
+  eq = 'eq',
+  ne = 'ne',
+  in = 'in',
+  nin = 'nin',
+  exists = 'exists',
+}
+
+export interface QueryParams {
+  where?: { field: string; value: any; condition?: Conditions }[]
+  whereType?: QueryKeys
+  sort?: [{ field: string; desc?: boolean }]
+  limit?: number
+  all?: boolean
+  page?: number
+  search?: { value: string; fields: string[] }
+}
+
+export enum StatusCodes {
+  success = '200',
+  unuthenticated = '401',
+  unauthorized = '403',
+  badRequest = '400',
+  validationError = '422',
+  expiredAccessToken = '461',
+}
+
+export type SocketReturn = {
+  code: StatusCodes
+  message: string
+  channel: string
+}
+
+export type EmitTypes = 'created' | 'updated' | 'deleted'
+
 export interface FormRule {
   type:
     | 'isRequired'

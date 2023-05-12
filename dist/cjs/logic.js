@@ -2,11 +2,26 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var index = require('./index-bfccfeeb.js');
-require('./_commonjsHelpers-68cdf74f.js');
+var services = require('./index-4f6f3ba8.js');
+require('form-data');
+require('http');
+require('https');
+require('util');
+require('stream');
+require('assert');
+require('tty');
+require('os');
+require('zlib');
+require('events');
 require('vue');
+require('fs');
+require('child_process');
+require('net');
+require('tls');
+require('crypto');
+require('./constants-e53b255a.js');
 
 const types = {};
 
-exports.Logic = index.Logic;
+exports.Logic = services.Logic;
 exports.types = types;

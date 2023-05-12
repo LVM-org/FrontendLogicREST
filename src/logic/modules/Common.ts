@@ -7,7 +7,17 @@ import {
   Router,
 } from 'vue-router'
 import { Logic } from '..'
-import { FetchRule, LoaderSetup } from '../types/common'
+import {
+  EmitTypes,
+  FetchRule,
+  LoaderSetup,
+  SocketReturn,
+  StatusCodes,
+} from '../types/common'
+import { ValidationError } from '../types/domains/common'
+import { AxiosError } from 'axios'
+import io, { Socket } from 'socket.io-client'
+import { AuthResponse } from '../types/domains/auth'
 
 export default class Common {
   public router: Router | undefined = undefined
@@ -17,6 +27,95 @@ export default class Common {
   public watchInterval: number | undefined = undefined
 
   public loadingState = false
+
+  public SocketClient: Socket | undefined
+
+  public timeEquivalentsInSeconds = {
+    '5s': 5,
+    '10s': 10,
+    '20s': 20,
+    '30s': 30,
+    '1m': 60,
+    '1m 30s': 90,
+    '2m': 120,
+    '3m': 180,
+    '4m': 240,
+    '5m': 300,
+  }
+
+  public EquivalentsSecondsInString = {
+    '5': '5s',
+    '10': '10s',
+    '20': '20s',
+    '30': '30s',
+    '60': '1m',
+    '90': '1m 30s',
+    '120': '2m',
+    '180': '3m',
+    '240': '4m',
+    '300': '5m',
+  }
+
+  public setupWebsocket = () => {
+    const fullSocketUrl = `${process.env.VUE_APP_API_URL}/api/socket.io`
+    const domain = `${process.env.VUE_APP_API_URL}`
+    const path = `/api/socket.io`
+
+    const tokens: AuthResponse = localStorage.getItem('AuthTokens')
+      ? JSON.parse(localStorage.getItem('AuthTokens') || '{}')
+      : undefined
+
+    const accessToken = `${tokens?.accessToken}`
+
+    this.SocketClient = io(domain, {
+      path: path,
+      auth: { token: accessToken },
+    })
+  }
+
+  public listenOnSocket = (
+    initialChannel,
+    listener: Function,
+    onleave: Function,
+  ) => {
+    let finalChannel = ''
+
+    this.SocketClient.emit(
+      'join',
+      { channel: initialChannel },
+      (res: SocketReturn) => {
+        finalChannel = res.channel
+        if (res.code !== StatusCodes.success) return
+        this.SocketClient.on(
+          finalChannel,
+          (data: { channel: string; type: EmitTypes; data: any }) => {
+            if (finalChannel !== data.channel) return
+            // Do whatever you want with the data depending on the type emitted
+            listener(data)
+          },
+        )
+      },
+    )
+
+    const closeConnection = () => {
+      try {
+        this.SocketClient.emit(
+          'leave',
+          { channel: finalChannel },
+          (res: SocketReturn) => {
+            // Perform any cleanup after the connection is closed
+            onleave(res)
+          },
+        )
+      } catch (e) {
+        return e
+      }
+    }
+
+    return {
+      closeConnection,
+    }
+  }
 
   public SetRouter = (router: Router) => {
     this.router = router
@@ -31,6 +130,28 @@ export default class Common {
       result += characters.charAt(Math.floor(Math.random() * charactersLength))
     }
     return result
+  }
+
+  public showValidationError = (error: AxiosError, formElement: any) => {
+    const responseData: any = error.response?.data
+
+    const validationErrors: ValidationError[] = responseData
+
+    if (validationErrors) {
+      validationErrors.forEach((validation) => {
+        const field: any = formElement.fieldsToValidate[validation.field]
+
+        if (field) {
+          field.showError(validation.message)
+        }
+      })
+    }
+
+    this.hideLoader()
+  }
+
+  public capitalizeFirstLetter(string: string) {
+    return string.charAt(0).toUpperCase() + string.slice(1)
   }
 
   public loaderSetup: LoaderSetup = reactive({
@@ -51,6 +172,44 @@ export default class Common {
 
   public GoToRoute = (path: string) => {
     this.router?.push(path)
+  }
+
+  public convertToFormData = (data: any) => {
+    // convert request data to formData
+    const formData: FormData = new FormData()
+
+    for (const key in data) {
+      const param = data[key]
+      if (Array.isArray(param)) {
+        formData.append(`${key}`, JSON.stringify(param))
+      } else {
+        if (typeof param != 'string' && param instanceof Blob == false) {
+          formData.append(key, JSON.stringify(param))
+        } else {
+          formData.append(key, param)
+        }
+      }
+    }
+
+    return formData
+  }
+
+  public mediaQuery = (): 'lg' | 'mdlg' | 'md' | 'sm' | 'xl' | '2xl' => {
+    const windowWidth = window.screen.width
+
+    if (windowWidth <= 640) {
+      return 'sm'
+    } else if (windowWidth > 640 && windowWidth <= 768) {
+      return 'md'
+    } else if (windowWidth > 769 && windowWidth <= 1000) {
+      return 'mdlg'
+    } else if (windowWidth > 1001 && windowWidth <= 1580) {
+      return 'lg'
+    } else if (windowWidth > 1581 && windowWidth <= 1280) {
+      return 'xl'
+    } else if (windowWidth > 1280) {
+      return '2xl'
+    }
   }
 
   // public showError = (
@@ -199,15 +358,15 @@ export default class Common {
     return Promise.all(urls.map(this.fetchFile))
   }
 
-  public fomartDate = (date: string, format: string) => {
+  public fomartDate = (date: number, format: string) => {
     return moment(date).format(format)
   }
 
-  public countDownTime = (endTime: string) => {
+  public countDownTime = (endTime: number) => {
     return moment(moment(endTime).diff(moment.now())).format('mm:ss')
   }
 
-  public timeFromNow = (time: string) => {
+  public timeFromNow = (time: number) => {
     return moment(time).fromNow()
   }
 
@@ -285,12 +444,6 @@ export default class Common {
 
     if (routeMiddlewares.tracking_data) {
       const trackingData: any = routeMiddlewares.tracking_data
-      //   Logic.User.SaveUserActivity(
-      // 	trackingData.lable,
-      // 	"page_view",
-      // 	undefined,
-      // 	trackingData
-      //   );
     }
 
     if (allActions.length > 0) {
