@@ -23,18 +23,6 @@ interface AuthUser extends User {
   id: string
   isEmailVerified: boolean
   authTypes: AuthTypes[]
-  roles: {
-    isAdmin: boolean
-    isSuperAdmin: boolean
-    isVerified: boolean
-  }
-  lastSignedInAt: number
-  signedUpAt: number
-  allNames: {
-    first: string
-    last: string
-    full: string
-  }
 }
 
 interface AuthResponse {

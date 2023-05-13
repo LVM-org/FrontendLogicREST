@@ -28,24 +28,6 @@ interface FileData {
   link: string
 }
 
-interface Tags {
-  hash: string
-  id: string
-  type: string
-  title: string
-  parent?: string
-  meta: {
-    courses: number
-    quizzes: number
-    images: number
-    documents: number
-    videos: number
-    total: number
-  }
-  createdAt: number
-  updatedAt: number
-}
-
 export enum QueryKeys {
   and = 'and',
   or = 'or',
@@ -73,4 +55,4 @@ export interface QueryParams {
   search?: { value: string; fields: string[] }
 }
 
-export { ValidationError, Paginated, FileData, Tags }
+export { ValidationError, Paginated, FileData }
