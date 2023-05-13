@@ -8,15 +8,12 @@
     "build:vue:watch": "rollup -c --watch",
     "build": "rimraf dist && npm run build:vue",
     "publish:lib": "npm run build && npm publish",
-    "watch": "npm run build:vue:watch",
-    "codegen": "graphql-codegen"
+    "watch": "npm run build:vue:watch"
   },
   "peerDependencies": {
     "vue": "^3.2.21"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "^3.1.0",
-    "@graphql-codegen/client-preset": "^1.1.3",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-node-resolve": "^14.0.0",
@@ -47,15 +44,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@urql/exchange-multipart-fetch": "^1.0.1",
-    "@urql/exchange-persisted-fetch": "^2.0.0",
     "axios": "^1.3.4",
     "currency.js": "^2.0.4",
     "graphql": "^16.6.0",
     "moment": "^2.29.4",
     "socket.io-client": "^4.6.1",
     "ts-node": "^10.9.1",
-    "urql": "^3.0.3",
     "vue-router": "^4.0.12"
   }
 }
