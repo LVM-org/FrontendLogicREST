@@ -1,7 +1,7 @@
 {
-  "name": "sofa-logic",
+  "name": "app-logic",
   "version": "0.0.2",
-  "description": "Frontend Logic for SOFA",
+  "description": "Frontend Logic for {App name}",
   "main": "src/index.ts",
   "scripts": {
     "build:vue": "rollup -c && rollup -c --environment MINIFY",
