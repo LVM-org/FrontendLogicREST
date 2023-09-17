@@ -1,8 +1,8 @@
 # FrontendLogicGraphQL
 
-Every frontend projects at Ceedlab has its FrontendLogic packaged as a NPM package. This package helps to abstract all the frontend business logic of a project from the main application. This  `FrontendLogicGraphQL` is a variation of the `FrontendLogic` package with `GraphQL` as the base protocol for communicating with the project backend.
+Every frontend projects at Ceedlab has its FrontendLogic packaged as a NPM package. This package helps to abstract all the frontend business logic of a project from the main application. This  `FrontendLogicREST` is a variation of the `FrontendLogic` package with `REST` as the base protocol for communicating with the project backend.
 
-The purpose of this micro-frontend development strategy is to simplifies the maintenance process and makes it easily for team members to collaborate on a single product without conflits.
+The purpose of this micro-frontend development strategy is to simplifies the maintenance process and makes it easily for team members to collaborate on a single product without conflict.
 
 ## How to use
 
@@ -10,7 +10,7 @@ The goal of this repository is for it to be use as a template for new FrontendLo
 
 To start clone this repository
 ```
-git clone https://drayfocus1@bitbucket.org/cc-portfolio/frontendlogicgraphql.git
+git clone https://github.com/LVM-org/FrontendLogicREST.git
 ```
 
 Update the `git remote origin url` with your package repository.
@@ -40,10 +40,6 @@ To build the package
 npm run build:lib
 ```
 
-To publish to Ceedlab private npm registry
-```
-npm publish --registry=https://npm-registry.ceedcap.io/
-```
 
 > Before attempting to publish a package, ensure you don't have not uncommited files by running `git commit add .` and you have updated the package version using `npm version patch`.
 
@@ -72,143 +68,95 @@ export const API_URL = ''
 
 **The services folder**
 
-This folder contains .ts files that handle API connection to the application backend. It has a `common` folder that contains the base `GraphQL client` configuration that sends the request to the backend. The `common` folder holds the `BaseApiService` class that allows you to make `mutation` and `queries` to the GraphQL serve. The `BaseApiService` also takes helo you takes care of user authentication as long as the `bearer` auth token is set.
+This folder contains .ts files that handle API connection to the application backend. It has a `common` folder that contains the base `REST API client` configuration that sends the request to the backend. The `common` folder holds the `BaseApiService` class that allows you to make common `CRUD` request to the backend serve. The `BaseApiService` also takes care of user authentication as long as the `bearer` auth token is set. Also in the `common` folder is the `ModelApiService` and `ReadOnlyApiService` classes which you can extend to create a new API class for a specific business domain.
 
 ```
 // src/services/common/BaseService.ts
 
-import { createClient, Client, dedupExchange, cacheExchange, CombinedError, fetchExchange } from 'urql';
-import { multipartFetchExchange } from '@urql/exchange-multipart-fetch';
-import { Logic } from "../../logic/modules";
-import { API_URL } from "../../common/constants";
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios'
+import { Logic } from '../../logic/modules'
+import { API_URL } from '../../common/constants'
+import { AuthResponse } from '../../logic/types/domains/auth'
 
 export class BaseApiService {
-	private baseUrl: string = API_URL;
-	public graphqlInstance: Client | undefined;
+  private readonly baseUrl = API_URL
+  public axiosInstance: AxiosInstance
+  private config: AxiosRequestConfig
+  resource
 
-	constructor() {
+  constructor(resource: string) {
+    if (!resource) throw new Error('Resource is not provided')
+    this.resource = resource
 
-	}
+    this.config = {
+      baseURL: this.baseUrl,
+    }
 
-	public query = (query: any, variables: any): Promise<any> => {
-		if (Logic.Common.apiUrl) {
-			this.baseUrl = Logic.Common.apiUrl || ''
-		}
-
-		this.graphqlInstance = createClient({
-			url: this.baseUrl,
-			fetchOptions: () => {
-				return {
-					headers: { authorization: Logic.Auth.AccessToken ? `Bearer ${Logic.Auth.AccessToken}` : '' },
-				};
-			},
-			exchanges: [dedupExchange, cacheExchange, fetchExchange],
-		});
-
-		return this.graphqlInstance.query(query, variables)
-			.toPromise().then((response) => {
-				if (response.error) {
-					this.handleErrors(response.error)
-					throw response.error
-				}
-
-				return response
-			});
-	}
-
-	public mutation = (query: any, variables: any): Promise<any> => {
-		if (Logic.Common.apiUrl) {
-			this.baseUrl = Logic.Common.apiUrl || ''
-		}
-		this.graphqlInstance = createClient({
-			url: this.baseUrl,
-			fetchOptions: () => {
-				return {
-					headers: { authorization: Logic.Auth.AccessToken ? `Bearer ${Logic.Auth.AccessToken}` : '' },
-				};
-			},
-			exchanges: [dedupExchange, cacheExchange, multipartFetchExchange],
-		});
-
-		return this.graphqlInstance.mutation(query, variables)
-			.toPromise().then((response) => {
-				if (response.error) {
-					this.handleErrors(response.error)
-					throw response.error
-				}
-
-				return response
-			});
-	}
-
-	...
-}
-
-```
-
-To use the `query` and `mutation` methods in the `BaseApiService` to make request, you need to create a new class that extends it. For instance, If you want to use the `BaseApiService` to send a SignUp `mutation` request, you will create a new class `AuthApi` and extends the `BaseApiService` like the sample below.
-
-```
-// src/services/AuthApi.ts
-
-import { BaseApiService } from './common/BaseService'
-
-export default class AuthApi extends BaseApiService {
-  public SignUp = (data: SignUpForm) => {
-    const requestData = `
-		mutation SignUp(
-			$phone_number: String!,
-			$password: String!
-		) {
-			SignUp(phone_number: $phone_number, password: $password) {
-				id,
-				uuid,
-				phone
-			}
-		}
-		`
-
-    const response: Promise<OperationResult<{
-      SignUp: any
-    }>> = this.mutation(requestData, data)
-
-    return response
+    this.axiosInstance = axios.create(this.config)
   }
 
-...
+  public getUrl(id = ''): string {
+    // auth token
+    const tokens: AuthResponse = localStorage.getItem('AuthTokens')
+      ? JSON.parse(localStorage.getItem('AuthTokens') || '{}')
+      : undefined
+    this.axiosInstance.defaults.baseURL = Logic.Common.apiUrl
+    this.axiosInstance.defaults.headers.common['Access-Token'] = tokens
+      ? tokens.accessToken
+      : ''
+    this.axiosInstance.defaults.headers.common['Refresh-Token'] = tokens
+      ? tokens.refreshToken
+      : ''
+    return id ? `/${this.resource}/${id}` : `/${this.resource}`
+  }
+
+  public handleErrors(err: AxiosError | any): void {
+    // Note: here you may want to add your errors handling
+    if (err.response?.status == 461) {
+      Logic.Common.hideLoader()
+      Logic.Auth.SignOut()
+    }
+    throw err
+  }
 }
+
 ```
 
-Because you extend the `BaseApiService` in the `AuthApi`, that give you access to use all the `methods` in the `BaseApiService` within `AuthApi`. So you can use `this.mutation()` to make mutation request and `this.query()` to make query request. Below is an example of a query operation,
+To use the CRUD methods in  `ModelApiService` and `ReadOnlyApiService` classes to make requests, you need to create a new class that extends it. For instance, If you want to use the `ModelApiService` to send a sign-up request, you will create a new class `AuthApi` and extend the `ModelApiService` like in the sample below.
 
 ```
 // src/services/AuthApi.ts
 
-import { BaseApiService } from './common/BaseService'
+import { ModelApiService } from '../common/ModelService'
 
-export default class AuthApi extends BaseApiService {
-  public GetAuthUser = () => {
-    const requestData = `
-    query GetAuthUser {
-      User {
-        uuid
-        first_name
-        last_name
-        email_verified_at
+export default class EmailApi extends ModelApiService {
+  constructor() {
+    super('auth/emails')
+  }
+
+  public async signUp(data: SignUpInput) {
+    try {
+      const response: AxiosResponse<AuthResponse> = await this.axiosInstance.post(
+        this.getUrl() + '/signup',
+        data,
+      )
+
+      return response
+    } catch (err) {
+      this.handleErrors(err)
+      if (err.response) {
       }
     }
-    `
-    const response: Promise<OperationResult<{
-      GetAuthUser: User
-    }>> = this.query(requestData, {})
-
-    return response
   }
-...
+
+ ...
 }
 ```
 
-You can create multiple files to handle API requests for each business domains of the application. For instance you can have `AuthApi` for authentication and authorization mutations and queries, and `UserApi` for user mutations and queries.
+Because you extend the `ModelApiService` in the `AuthApi`, that give you access to use all the `methods` in the `ModelApiService` within `AuthApi`. So you can use `this.post()` to make post request and `this.get()` to make get request.
+
+
+You can create multiple files to handle API requests for each business domains of the application. For instance you can have `AuthApi` for authentication and authorization API requests and `UserApi` for user API requests.
 
 To export all these API definitions for use, add them to the `src/services/index.ts` file. Below is an example that export the `AuthApi`
 
