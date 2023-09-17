@@ -1,4 +1,4 @@
-# FrontendLogicGraphQL
+# FrontendLogicREST
 
 Every frontend projects at Ceedlab has its FrontendLogic packaged as a NPM package. This package helps to abstract all the frontend business logic of a project from the main application. This  `FrontendLogicREST` is a variation of the `FrontendLogic` package with `REST` as the base protocol for communicating with the project backend.
 
@@ -50,7 +50,7 @@ This repository is a template for creating new FrontendLogic packages and it use
 
 ### The root dir
 
-This contains basic Typescript project files like package.json, tsconfig.json, e.t.c. It also contain GraphQL type generation file `codegen.ts`. This package uses `rollup` for its code compilation.
+This contains basic Typescript project files like package.json, tsconfig.json, e.t.c. This package uses `rollup` for its code compilation.
 
 ### The src/ dir
 
